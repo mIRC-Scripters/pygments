@@ -6,11 +6,6 @@
 
 """
 
-"""
-	Note: definitions in state-menu-block-* refer to 
-	state-code-block-*; problems?
-"""
-
 import re
 
 from pygments.lexer import Lexer, RegexLexer, bygroups, default, words, \
@@ -39,14 +34,14 @@ class MircLexer(RegexLexer):
 			(r'(\S+)', Name.Function, 'state-function'),
 		],
 		'state-code-block': [
-			(r'^([ ]{2})+', Whitespace, 'state-code-singleline'),
+			(r'^[ \t]+', Whitespace, 'state-code-singleline'),
 
 			(r'^\}', Punctuation, '#pop'),
 			
 			(r'\n', Text),
 		],
 		'state-code-singleline': [
-			(r'^([ ]{2})+', Whitespace),
+			(r'^[ \t]+', Whitespace),
 
 			include('comments'),
 
@@ -67,7 +62,7 @@ class MircLexer(RegexLexer):
 			# CHANGES END
 
 			(r'(?:(\{)([ \t]+)?)', bygroups(Punctuation, Whitespace), '#push'),
-			(r'(?:(?<!^)([ \t]+)?(\}))', Punctuation, '#pop'),
+			(r'(?:(?<!^)([ \t]+)?(\}))', bygroups(Whitespace, Punctuation), '#pop'),
 
 			include('variables'),
 			include('identifiers'),
@@ -122,7 +117,12 @@ class MircLexer(RegexLexer):
 		],
 		'variables': [
 			(r'(?:(?<![^(\s,!])((?:%|&)[^)\s,]+)(?:([ \t]+)(=)([ \t]+)))', bygroups(Name.Variable, Whitespace, Operator, Whitespace), 'state-variable'),
+			(r'(?:(?<![^(\s,!])((?:%|&)[^)\s,]+)(?:([ \t]+)(=))$)', bygroups(Name.Variable, Whitespace, Operator)),
+			(r'(?:(?<![^(\s,!])((?:%|&)[^)\s,]+)(?:([ \t]+)(\[)))', bygroups(Name.Variable, Whitespace, Punctuation), 'state-eval-bracket'),
 			(r'(?:(?<![^(\s,!])((?:%|&)[^)\s,]+))', Name.Variable),
+		],
+		'menu-variables': [
+			(r'(?:(?<![^(\s.,!])((?:%|&)[^)\s,:]+))', Name.Variable),
 		],
 		'state-variable': [
 			(r',', Punctuation, '#pop'),
@@ -146,6 +146,11 @@ class MircLexer(RegexLexer):
 			(r'(?:(?<![^( ,!])(\$iif)(\())', bygroups(Keyword, Keyword), 'state-conditional-iif-outer'),
 			(r'(?:(?<![^( ,!])(\$[^\s(),]+)(\())', bygroups(Name.Function, Name.Function), 'state-identifier-content'),
 			(r'(?:(?<![^( ,!])(\$[^\s(),]+))', Name.Function),
+		],
+		'menu-identifiers': [
+			(r'(?:(?<![^( .,!])(\$iif)(\())', bygroups(Keyword, Keyword), 'state-conditional-iif-outer'),
+			(r'(?:(?<![^( .,!])(\$[^\s(),]+)(\())', bygroups(Name.Function, Name.Function), 'state-identifier-content'),
+			(r'(?:(?<![^( .,!])(\$[^\s(),:]+))', Name.Function),
 		],
 		'state-identifier-content': [
 			include('identifiers'),
@@ -197,13 +202,45 @@ class MircLexer(RegexLexer):
 			include('comments'),
 			include('variables'),
 			include('identifiers'),
+			include('whitespace'),
+
 			(r'"[^\n"]*"', String.Double),
 			(r'\d+', Number.Integer),
-			(r'[ \t]+', Whitespace),
+
 			(r',', Punctuation),
 			(r'\}', Punctuation, '#pop'),
 			(r'\n', Text),
 			(r'.', Text),
+		],
+		'state-menu-block': [
+			(r'^(?:([ ]{2})+(\.*))', bygroups(Whitespace, Punctuation), 'state-menu-singleline-first'),
+			(r'^\}', Punctuation, '#pop'),
+			(r'\n', Text),
+		],
+		'state-menu-singleline-first': [
+			include('menu-variables'),
+			include('menu-identifiers'),
+			(r':', Punctuation, ('#pop', 'state-menu-code-content')),
+			(r'$', Text, '#pop'),
+			(r'.', String),
+		],
+		'state-menu-code-content': [
+			(r'\n', Text, '#pop'),
+
+			(r'(?:(\{)(?:([ \t]+)?(\n)))', bygroups(Punctuation, Whitespace, Text), 'state-menu-code-block'),
+			
+			include('standard-code'),
+
+			(r'(?:([ \t]+)(\|)([ \t]+))', bygroups(Whitespace, Punctuation, Whitespace), 'state-code-singleline'),
+
+			(r'(\S+)', Name.Function, 'state-function'),
+		],
+		'state-menu-code-block': [
+			(r'^(?![ \t]+\})([ \t]+)', Whitespace, 'state-code-singleline'),
+
+			(r'^(?:([ \t]+)(\}))', bygroups(Whitespace, Punctuation), '#pop'),
+			
+			(r'\n', Text),
 		],
 		'root': [
 			# Comments below
@@ -232,7 +269,7 @@ class MircLexer(RegexLexer):
 			# DIALOGS below
 			(r'(?i)^(?:(dialog)([ \t]+)(?:(-l)([ \t]+))?(\S+)([ \t]+)(\{))', bygroups(Name.Builtin, Whitespace, Generic.Strong, Whitespace, Name.Function, Whitespace, Punctuation), 'state-dialog-content'),
 			# MENUS
-			# (r'(?i)^(?:(menu)([ \t]+)((?:status|channel|query|nicklist|menubar|(?:channel)?link|@[^ \t,]+|\*)(?:,(?:status|channel|query|nicklist|menubar|(?:channel)?link|@[^\t,]+))*|\*)([ \t]+)(\{))', bygroups(Name.Builtin, Whitespace, Generic.Strong, Whitespace, Punctuation), 'state-menu-block-outer'),
+			(r'(?i)^(?:(menu)([ \t]+)((?:status|channel|query|nicklist|menubar|(?:channel)?link|@[^ \t,]+|\*)(?:,(?:status|channel|query|nicklist|menubar|(?:channel)?link|@[^\t,]+))*|\*)([ \t]+)(\{))', bygroups(Name.Builtin, Whitespace, Generic.Strong, Whitespace, Punctuation), 'state-menu-block'),
 			# Catch all
 			# (r'.', Text),
 		],
