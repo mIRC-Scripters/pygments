@@ -61,7 +61,11 @@ class MircLexer(RegexLexer):
 		'standard-code': [
 			(r'(?:((?:else)?if|while)([ \t]+)(\())', bygroups(Keyword, Whitespace, Keyword), 'state-conditional-outer'),
 			(r'(?:(else)([ \t]+))', bygroups(Keyword, Whitespace)),
-			
+
+			# CHANGES START
+			(r'(?:(alias)([ \t]+)(\S+)([ \t]+))', bygroups(Name.Function, Whitespace, Name.Function, Whitespace), ('#pop', 'state-code-singleline')),
+			# CHANGES END
+
 			(r'(?:(\{)([ \t]+)?)', bygroups(Punctuation, Whitespace), '#push'),
 			(r'(?:(?<!^)([ \t]+)?(\}))', Punctuation, '#pop'),
 
