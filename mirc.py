@@ -1,9 +1,10 @@
 """
 	pygments.lexers.mirc
-	~~~~~~~~~~~~~~~~~~~~~~
+	~~~~~~~~~~~~~~~~~~~~
 
 	Lexer for mIRC Scripting Language.
-
+	:copyright: None
+	:license: The Unlicense
 """
 
 import re
@@ -47,9 +48,9 @@ class MircLexer(RegexLexer):
 
 			include('standard-code'),
 
-			(r'(?:([ \t]+)(\|)([ \t]+))', bygroups(Whitespace, Punctuation, Whitespace), ('#pop', 'state-code-singleline')),
-
 			(r'(\S+)', Name.Function, ('#pop', 'state-function')),
+			
+			(r'(?:([ \t]+)(\|)([ \t]+))', bygroups(Whitespace, Punctuation, Whitespace), ('#pop', 'state-code-singleline')),
 
 			(r'\n', Text, '#pop'),
 		],
@@ -67,12 +68,12 @@ class MircLexer(RegexLexer):
 			include('variables'),
 			include('identifiers'),
 			include('goto-statements'),
+			(r' |\t', Whitespace),
 		],
 		'state-function': [
 			include('variables'),
 			include('identifiers'),
 
-			(r'(?:([ \t]+)(\|)([ \t]+))', bygroups(Whitespace, Punctuation, Whitespace), ('#pop', 'state-code-singleline')),
 			(r'(?=([ \t]+)\})', Whitespace, '#pop'),
 			(r'$', Text, '#pop'),
 
@@ -120,6 +121,7 @@ class MircLexer(RegexLexer):
 			(r'(?:(?<![^(\s,!])((?:%|&)[^)\s,]+)(?:([ \t]+)(=))$)', bygroups(Name.Variable, Whitespace, Operator)),
 			(r'(?:(?<![^(\s,!])((?:%|&)[^)\s,]+)(?:([ \t]+)(\[)))', bygroups(Name.Variable, Whitespace, Punctuation), 'state-eval-bracket'),
 			(r'(?:(?<![^(\s,!])((?:%|&)[^)\s,]+))', Name.Variable),
+			(r'(?:([ \t]+)(=)([ \t]+))', bygroups(Whitespace, Operator, Whitespace)),
 		],
 		'menu-variables': [
 			(r'(?:(?<![^(\s.,!])((?:%|&)[^)\s,:]+))', Name.Variable),
@@ -249,7 +251,8 @@ class MircLexer(RegexLexer):
 			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):(agent|appactive|connect(fail)?|disconnect|dns|exit|(un)?load|(midi|mp3|play|song|wave)end|nick|nosound|u?notify|ping|pong|quit|start|usermode|options|resume|song|suspend):)', Name.Builtin, 'state-code-content'),
 			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):(?:action|notice|(?:client)?text):(?:(%[^:]+)|[^:]+):(?:(%[^:]+)|[^:]+):)', Name.Builtin, 'state-code-content'),
 			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):(active|input|tabcomp|mscroll):(\*|#[^:]*|\?|=|!|@[^:]*|(%[^:]+)):)', Name.Builtin, 'state-code-content'),
-			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):(close|open):(\*|\?|=|!|@[^:]*|(%[^:]+)):)', Name.Builtin, 'state-code-content'),
+			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):open:(\*|\?|=|!|@[^:]*|(%[^:]+)):[^:]+:)', Name.Builtin, 'state-code-content'),
+			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):(?:close|open):(\*|\?|=|!|@[^:]*|(%[^:]+)):)', Name.Builtin, 'state-code-content'),	
 			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):dialog:[^:]+:(?:init|close|edit|sclick|dclick|menu|scroll|mouse|rclick|drop|\*|(%[^:]+)):(?:(%[^:]+)|[\d\-,\*]+):)', Name.Builtin, 'state-code-content'),
 			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):((un)?ban|(de)?help|(de|server)?op|(de)?owner|(de)?voice|invite|join|kick|(server|raw)?mode|part|topic|(de)?admin):(\*|#[^:]*|(%[^:]+)):)', Name.Builtin, 'state-code-content'),
 			(r'(?i)^(on(?:[ \t]+)(?:me:)?(?:[^ \t:]+):(?:chat|ctcpreply|error|file(?:rcvd|sent)|(?:get|send)fail|logon|serv|signal|snotice|sock(?:close|listen|open|read|write)|udp(?:read|write)|vcmd|wallops|download|(?:un)?zip):(?:(%[^:]+)|[^:]+):)', Name.Builtin, 'state-code-content'),
